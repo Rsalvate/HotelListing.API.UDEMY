@@ -1,3 +1,4 @@
+using HotelListing.API.Configurations;
 using HotelListing.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -31,6 +32,8 @@ builder.Services.AddCors(options =>
 // ctx é um avariavel para a instancia do builder
 //lc é para a configuração do log "log configuration"
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
+
+builder.Services.AddAutoMapper(typeof(AutoMapperConfig));   
 
 var app = builder.Build();
 

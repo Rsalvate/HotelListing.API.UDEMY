@@ -1,6 +1,7 @@
-﻿using HotelListing.API.Data;
+﻿using AutoMapper;
+using HotelListing.API.Data;
 using HotelListing.API.Data.Entity;
-using Microsoft.AspNetCore.Http;
+using HotelListing.API.Models.Country;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,35 +12,39 @@ namespace HotelListing.API.Controllers
     public class ContriesController : ControllerBase
     {
         private readonly HotelListingDbContext _context;
+        private readonly IMapper _mapper;
 
-        public ContriesController(HotelListingDbContext context)
+        public ContriesController(HotelListingDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Country>>> Get()
+        public async Task<ActionResult<IEnumerable<GetCountryDto>>> Get()
         {
             var countries = await _context.Countries.ToListAsync();
-            return Ok(countries);
+           
+            return Ok(_mapper.Map<List<GetCountryDto>>(countries));
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Country>> GetCountry(int id)
+        public async Task<ActionResult<CountryDto>> GetCountry(int id)
         {
-            var country = await _context.Countries.FindAsync(id);
+            var country = await _context.Countries.Include(i=>i.Hotels).FirstOrDefaultAsync(f=>f.Id == id);
 
             if (country == null)
             {
                 return NotFound();
             }
 
-            return Ok(country);
+            return Ok(_mapper.Map<CountryDto>(country));
         }
 
         [HttpPost]
-        public async Task<ActionResult<Country>> PostCountry(Country country)
+        public async Task<ActionResult<Country>> PostCountry(CreateCountryDto countryDto)
         {
+            var country = _mapper.Map<Country>(countryDto);
             _context.Countries.Add(country);
             await _context.SaveChangesAsync();
 
