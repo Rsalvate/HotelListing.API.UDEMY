@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using HotelListing.API.Contracts;
 using HotelListing.API.Data;
 using HotelListing.API.Data.Entity;
 using HotelListing.API.Models.Country;
@@ -11,27 +12,27 @@ namespace HotelListing.API.Controllers
     [ApiController]
     public class ContriesController : ControllerBase
     {
-        private readonly HotelListingDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ICountriesRepository _countriesRepository;
 
-        public ContriesController(HotelListingDbContext context, IMapper mapper)
+        public ContriesController(IMapper mapper, ICountriesRepository countriesRepository)
         {
-            _context = context;
             _mapper = mapper;
+            _countriesRepository = countriesRepository;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetCountryDto>>> Get()
         {
-            var countries = await _context.Countries.ToListAsync();
-           
+            var countries = await _countriesRepository.GetAllAsync();
+
             return Ok(_mapper.Map<List<GetCountryDto>>(countries));
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<CountryDto>> GetCountry(int id)
         {
-            var country = await _context.Countries.Include(i=>i.Hotels).FirstOrDefaultAsync(f=>f.Id == id);
+            var country = await _countriesRepository.GetDetails(id);
 
             if (country == null)
             {
@@ -45,36 +46,42 @@ namespace HotelListing.API.Controllers
         public async Task<ActionResult<Country>> PostCountry(CreateCountryDto countryDto)
         {
             var country = _mapper.Map<Country>(countryDto);
-            _context.Countries.Add(country);
-            await _context.SaveChangesAsync();
+            await _countriesRepository.AddAsync(country);
 
             return CreatedAtAction(nameof(GetCountry), new { id = country.Id }, country);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCountry(int id, Country country)
+        public async Task<IActionResult> PutCountry(int id, UpdateCountryDtoBase updateCountryDto)
         {
-            if(id != country.Id)
+            if (id != updateCountryDto.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(country).State = EntityState.Modified;
+            var country = await _countriesRepository.GetAsync(id);
+
+            if (country == null)
+            {
+                return NotFound();
+            }
+
+            _mapper.Map(updateCountryDto, country);
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _countriesRepository.UpdateAsync(country);
             }
             catch (DbUpdateConcurrencyException e)
             {
-                if (!CountryExists(id))
+                if (!await CountryExists(id))
                 {
                     return BadRequest(e.Message);
                 }
                 else
                 {
                     return Problem(e.Message);
-                }                
+                }
             }
 
             return NoContent();
@@ -83,21 +90,20 @@ namespace HotelListing.API.Controllers
         [HttpDelete]
         public async Task<IActionResult> DeleteCountry(int id)
         {
-            var country = await _context.Countries.FindAsync(id);
-            if(country == null)
+            var country = await _countriesRepository.GetAsync(id);
+            if (country == null)
             {
                 return NotFound();
             }
 
-            _context.Countries.Remove(country);
-            await _context.SaveChangesAsync();
+            await _countriesRepository.DeleteAsync(id);
 
             return NoContent();
         }
 
-        private bool CountryExists(int id)
+        private async Task<bool> CountryExists(int id)
         {
-            return _context.Countries.Any(e => e.Id == id);
+            return await _countriesRepository.Exists(id);
         }
     }
 }
