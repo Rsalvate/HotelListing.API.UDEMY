@@ -2,6 +2,7 @@
 using HotelListing.API.Contracts;
 using HotelListing.API.Data.Entity;
 using HotelListing.API.Models.Hotels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<HotelDto>>> Get()
         {
             var hotels = await _hotelsRepository.GetAllAsync();
@@ -29,6 +31,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<HotelDto>> GetHotel(int id)
         {
             var hotel = await _hotelsRepository.GetAsync(id);
@@ -42,6 +45,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<HotelDto>> PostHotel(CreateHotelDto hotelDto)
         {
             var hotel = _mapper.Map<Hotel>(hotelDto);
@@ -51,6 +55,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> PutHotel(int id, UpdateHotelDto updateHotelDto)
         {
             if (id != updateHotelDto.Id)
@@ -87,6 +92,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpDelete]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteHotel(int id)
         {
             var hotel = await _hotelsRepository.GetAsync(id);

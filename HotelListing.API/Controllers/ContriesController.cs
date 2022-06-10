@@ -3,13 +3,14 @@ using HotelListing.API.Contracts;
 using HotelListing.API.Data;
 using HotelListing.API.Data.Entity;
 using HotelListing.API.Models.Country;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing.API.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
+    [ApiController]    
     public class ContriesController : ControllerBase
     {
         private readonly IMapper _mapper;
@@ -22,6 +23,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<GetCountryDto>>> Get()
         {
             var countries = await _countriesRepository.GetAllAsync();
@@ -30,6 +32,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<CountryDto>> GetCountry(int id)
         {
             var country = await _countriesRepository.GetDetails(id);
@@ -43,6 +46,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles ="Administrator")]
         public async Task<ActionResult<Country>> PostCountry(CreateCountryDto countryDto)
         {
             var country = _mapper.Map<Country>(countryDto);
@@ -52,6 +56,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> PutCountry(int id, UpdateCountryDtoBase updateCountryDto)
         {
             if (id != updateCountryDto.Id)
@@ -88,6 +93,7 @@ namespace HotelListing.API.Controllers
         }
 
         [HttpDelete]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteCountry(int id)
         {
             var country = await _countriesRepository.GetAsync(id);
